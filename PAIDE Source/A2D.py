@@ -1,12 +1,20 @@
+###################################
+# Imports
 import pygame
 import datetime
 import pathlib
+import os
+from subprocess import run 
+import json
 import wx
 from colorama import Fore as TextColour
 from time import sleep as Wait
+import webbrowser
+###########################################
 
-ObjectList = []
-PlayerList = []
+
+
+
 
 def Error(text):
     print(f"{TextColour.RED}{text}{TextColour.RESET}")
@@ -33,53 +41,16 @@ class Images():
 class Events():
     def __init__(self):
 
-        self.events = ["quit", ]
-
-class Instance():
-    def __init__(self, Name:str = None, IsFullScreen:bool = False, Width:int = 400, Height:int = 400):
-        
-        self.External = wx.App(False)
-        
-        Info("""
-Welcome to PAIDE
-Doccumentation Can be Found at: <https://Insert-Link-Here.com>""")
-        self.Init = pygame.init()
-        self.Running = True
-        self.ScreenHeight = Height
-        self.ScreenWidth = Width
-        
-        self.Events = []
-        
-        if Name == None or Name.strip() == "":
-            Error("Error: Instance must Require a Name")
-
-        if IsFullScreen == True:
-
-            self.ScreenWidth, self.ScreenHeight = wx.GetDisplaySize()
-        
-        pygame.display.set_mode((self.ScreenWidth,self.ScreenHeight))
-        pygame.display.set_caption(str(Name))
-
-    def EventRunner(self):
-        for each in self.Events:
-            try:
-                eval(f"{each}()")
-            except:
-                print(f"Log: {datetime.datetime.now.strftime("%H:%M:%S")}, could not find '{each}' ")
-
-    def Display(self):
-        pygame.display.flip()
-            
+        self.Events = ["quit"]
+        self.CurrentEventID = ""
     
-    def Leave(self):
-        pygame.quit()
-        exit()
-        
+    def SendEvent(self, EventName:str = ""):
+        self.CurrentEventID = str(EventName)
 
 class Player():
-    def __init__(self, Name:str = "Player 1", Size:int = 2, MovementSpeed:int = 5, StartPositon:list = [100,100], MovementBinds:list = [pygame.K_w, pygame.K_a, pygame.K_d, pygame.K_s], IsAnimated:bool = False):
+    def __init__(self, Name:str = f"NewPlayer", Size:int = 2, MovementSpeed:int = 5, StartPositon:list = [100,100], MovementBinds:list = [pygame.K_w, pygame.K_a, pygame.K_d, pygame.K_s], IsAnimated:bool = False):
         
-        self.UserName = Name
+        self.DisplayName = Name
         self.Position = StartPositon
         self.Size = Size
         self.Speed = MovementSpeed
@@ -96,8 +67,6 @@ class Player():
         self.LeftImages = []
         self.RightImages = []
         self.DownImages = []
-
-        PlayerList.append(str(self))
     
     def MovementQue(self):
 
@@ -147,10 +116,82 @@ class Player():
             else:
                 self.CurrentAnimationPoint = ["DOWN", 0]
 
-        if self.LastDirection == "UP" and self.Animated:
-            Wait(1)
 
 
+
+class Instance():
+    def __init__(self, Name:str = None, IsFullScreen:bool = False, Width:int = 400, Height:int = 400):
+        
+        self.External = wx.App(False)
+        
+        ConfigFile = pathlib.Path("Assets\cfg\cfg.json")
+        try:
+            Test = open(ConfigFile)
+            Test.close()
+        except:
+            Error("Error: Configuration file could not be found")
+
+        with open(ConfigFile, "r+") as NewConfig:
+            self.Configs = json.load(NewConfig)
+
+            Info("""
+Welcome to PAIDE
+Doccumentation Can be Found at: <https://Insert-Link-Here.com>""")
+        
+            if self.Configs["IsNewStartup"] == True:
+                Warn("We will need to install the Python interpreter as it is your first time using this program")
+                #run("Dependancies\PySource.exe") # change this to open the python download menu instead
+                webbrowser.open_new_tab("https://www.python.org/ftp/python/3.13.2/python-3.13.2-amd64.exe")
+                self.Configs.update({"IsNewStartup" : False})
+        
+        os.remove(ConfigFile)
+            
+        with open(ConfigFile, "x") as NewConfig: 
+            json.dump(self.Configs, NewConfig, indent = 4)
+                
+        
+        self.Init = pygame.init()
+        self.Running = True
+        self.ScreenHeight = Height
+        self.ScreenWidth = Width
+
+        
+        
+        self.Events = []
+        self.ObjectList = []
+        self.PlayerList = []
+        
+        if Name == None or Name.strip() == "":
+            Error("Error: Instance must Require a Name")
+
+        if IsFullScreen == True:
+
+            self.ScreenWidth, self.ScreenHeight = wx.GetDisplaySize()
+        
+        pygame.display.set_mode((self.ScreenWidth,self.ScreenHeight))
+        pygame.display.set_caption(str(Name))
+
+
+    def EventRunner(self):
+        for each in self.Events:
+            try:
+                eval(f"{each}()")
+            except:
+                Warn(f"Log: {datetime.datetime.now.strftime("%H:%M:%S")}, could not find '{each}' ")
+
+    def Display(self, PlayerList:list = None):
+        if type(PlayerList) != list:
+            Error("Error: PlayerList is not a list type")
+        for each in self.PlayerList:
+            pygame.draw.circle(radius=each.Size, centre = each.Position, color= "#FF0000") 
+        Wait(1)
+        pygame.display.flip()
+            
+    
+    def Leave(self):
+        pygame.quit()
+        exit()
+        
 
 
 class Object():
