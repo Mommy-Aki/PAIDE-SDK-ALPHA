@@ -1,2 +1,2 @@
-# PAIDE-Engine
-A Game Engine helping developments using Pygame by simplifying the need for setting up and configuring the Pygame Module.
+# PAIDE-SDK
+A Python SDK helping developments using Pygame by simplifying the need for setting up and configuring the Pygame Module.
